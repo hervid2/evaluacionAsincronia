@@ -1,58 +1,39 @@
-// const request = async (url) => {
-//     let response = await fetch(`${url}`);
-//     return await response.json()
-// }
-// const users = async () => await request('https://jsonplaceholder.typicode.com/users');
-// const postsUser = async (userId) => await request(`https://jsonplaceholder.typicode.com/posts/?userId=${userId}`);
-// const commentsPost = async (postId) => await request(`https://jsonplaceholder.typicode.com/comments/?postId=${postId}`);
+const solicitud = async (url) => {
+    const respuesta = await fetch(`${url}`);
+    return await respuesta.json()
+}
+const usuarios = async () => await solicitud('https://jsonplaceholder.typicode.com/users');
+const postsUsuario = async (userId) => await solicitud(`https://jsonplaceholder.typicode.com/posts/?userId=${userId}`);
+const comentariosPost = async (postId) => await solicitud(`https://jsonplaceholder.typicode.com/comments/?postId=${postId}`);
+const albums = async (userId) => await solicitud(`https://jsonplaceholder.typicode.com/albums?userId=${userId}`);
+const fotosAlbum = async (albumId) => await solicitud(`https://jsonplaceholder.typicode.com/photos?albumId=${albumId}`);
 
-// const load = async () => {
-//     let usuarios = await users();
-//     let arrayPosts = [];
-//     let arrayComments = [];
+const cargar = async () => {
+    const users = await usuarios();
+    const respuesta = await Promise.all(
+        users.map(async (user) => {
+            
+            const albumes = await albums(user.id);
+            const foticos = await Promise.all(
+                albumes.map(async (album) => {
+                    const fotos = await fotosAlbum(album.id);
+                    return {...albumes, fotos}
+                })
+            )
 
-//     for (const usuario of usuarios) {
-//         arrayPosts.push(postsUser(usuario.id))
-//     }
+            const posts = await postsUsuario(user.id);
+            const postComentarios = await Promise.all(
+                posts.map(async (post) => {
+                    const comentarios = await comentariosPost(post.id);
+                    return { ...post, comentarios }
+                })
+            );
+            
+            return { ...user, posts: postComentarios, albumcitos: foticos };
+            
+})
+);
+console.log(respuesta);
+}
 
-//     let responsePost = await Promise.all(arrayPosts);
-//     console.log(responsePost); //responsePost aloja el array de los 10 usuarios con sus respectivos posts pero sigue faltando agregar los comments dentro de cada post
-    
-//     for (let i = 0; i < responsePost.length; i++) {
-//         const post = responsePost[i][i];
-//         arrayComments.push(commentsPost(post.id))
-//     }
-//     let responseComments = await Promise.all(arrayComments);
-//     console.log(responseComments);//responseComments aloja el array de los 10 usuarios con sus respectivos post y dentro de cada post, sus repectivos comments
-// }
-
-// load();
-
-const request = async (url) => {
-    let response = await fetch(`${url}`);
-    return await response.json();
-};
-
-const users = async () => await request('https://jsonplaceholder.typicode.com/users');
-const postsUser = async (userId) => await request(`https://jsonplaceholder.typicode.com/posts/?userId=${userId}`);
-const commentsPost = async (postId) => await request(`https://jsonplaceholder.typicode.com/comments/?postId=${postId}`);
-
-const load = async () => {
-    let usuarios = await users();
-    let allComments = [];
-
-    for (const usuario of usuarios) {
-        // Obtener las publicaciones de cada usuario
-        const posts = await postsUser(usuario.id);
-
-        for (const post of posts) {
-            // Obtener los comentarios de cada publicación
-            const comments = await commentsPost(post.id);
-            allComments.push({ postId: post.id, comments });
-        }
-    }
-
-    console.log(allComments);
-};
-
-load();
+cargar();
